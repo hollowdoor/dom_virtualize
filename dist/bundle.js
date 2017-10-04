@@ -6,28 +6,38 @@ var Virtualize = function Virtualize(ref){
     var frame = ref.frame; if ( frame === void 0 ) frame = document.createElement('div');
     var parent = ref.parent; if ( parent === void 0 ) parent = document.createElement('div');
     var render = ref.render; if ( render === void 0 ) render = null;
+    var afterAdd = ref.afterAdd; if ( afterAdd === void 0 ) afterAdd = function (){};
+    var childHeight = ref.childHeight; if ( childHeight === void 0 ) childHeight = 0;
     var classes = ref.classes; if ( classes === void 0 ) classes = {};
 
     frame.style.width = '500px';
     frame.style.height = '400px';
     frame.style.border = '1px solid black';
+    frame.style.display = 'block';
+
     var self = this;
     frame.appendChild(parent);
+    //parent.style.height = childHeight + 'px';
 
+    this.childHeight = childHeight;
     this.data = [];
-    this.element = frame;
-    this._parent = parent;
+    this.element = this.frame = frame;
+    this.container = this._parent = parent;
     this._render = render;
+    this._afterAdd = afterAdd;
     this.indexes = {
         top: 0,
         bottom: 0
     };
 
-    var last = this.last = document.createElement('div');
+    /*let last = this.last = document.createElement('div');
     last.style.width = '100%';
     last.style.hight = '0px';
     last.style.margin = '';
     last.style.padding = '';
+    last.style.border = '1px solid red';
+    last.style.position = 'relative';
+    parent.appendChild(last);*/
     frame.style.overflow = 'scroll';
 
     /*let {
@@ -42,32 +52,53 @@ var Virtualize = function Virtualize(ref){
         self.expand();
     }
 
-    parent.addEventListener('scroll', onScroll);
+    frame.addEventListener('scroll', onScroll);
 
     this.destroy = function(){
-        parent.removeEventListener('scroll', onScroll);
+        frame.removeEventListener('scroll', onScroll);
     };
 };
 Virtualize.prototype.expand = function expand (){
         var this$1 = this;
 
-    var rect = this.last.getBoundingClientRect();
-    var outer = this.element.getBoundingClientRect();
+    var last = this._parent.lastChild;
+    var rect = last ? last.getBoundingClientRect() : null;
+    var outer = this.frame.getBoundingClientRect();
     var parent = this._parent;
     var bottom = this.indexes.bottom;
-    if(rect.top >= outer.bottom){
-        for(var i=this.indexes.bottom; i<this.data.length; i++){
-            rect = this$1.last.getBoundingClientRect();
-            if(rect.top >= outer.bottom){
-                console.log('this.data[i] ',this$1.data[i]);
-                var el = domElementals.toElement(this$1._render(this$1.data[i]));
-                parent.appendChild(el);
-                bottom = i;
+    console.log('outer ',outer);
+    console.log('this.element.style.height ',this.element.style.height);
+    console.log(!rect || rect.bottom >= outer.bottom);
+    if(!rect || rect.top <= outer.bottom){
+        var start = parent.children.length;
+        for(var i=start; i<this.data.length; i++){
+            if(last){
+                rect = last.getBoundingClientRect();
+                console.log('rect ', rect);
+                if(rect.bottom >= outer.bottom && rect.right > outer.right - rect.width){
+                    break;
+                }
             }
 
+            //console.log('this.data[i] ',this.data[i])
+            var el = domElementals.toElement(this$1._render(this$1.data[i]));
+            parent.appendChild(el);
+            last = el;
+            bottom = i;
+
+
         }
+        console.log('outer ',outer);
         this.indexes.bottom = bottom;
 
+    }else if(rect.top > outer.bottom + 10){
+        for(var i$1=0; i$1<parent.children.length; i$1++){
+            var child = parent.children[i$1];
+            rect = child.getBoundingClientRect();
+            if(rect.top > outer.bottom + 10){
+                parent.removeChild(child);
+            }
+        }
     }
 };
 Virtualize.prototype.push = function push (){
@@ -75,10 +106,12 @@ Virtualize.prototype.push = function push (){
         while ( len-- ) data[ len ] = arguments[ len ];
 
     this.data = this.data.concat(data);
+    this._afterAdd();
+
+    //this._parent.style.height = (this.childHeight * this.data.length) + 'px';
     this.expand();
 };
 Virtualize.prototype.appendTo = function appendTo (dest){
-    console.log('dest ',dest);
     try{
 
         dest.appendChild(this.element);

@@ -5,28 +5,38 @@ class Virtualize {
         frame = document.createElement('div'),
         parent = document.createElement('div'),
         render = null,
+        afterAdd = ()=>{},
+        childHeight = 0,
         classes = {}
     }){
         frame.style.width = '500px';
         frame.style.height = '400px';
         frame.style.border = '1px solid black';
+        frame.style.display = 'block';
+
         const self = this;
         frame.appendChild(parent);
+        //parent.style.height = childHeight + 'px';
 
+        this.childHeight = childHeight;
         this.data = [];
-        this.element = frame;
-        this._parent = parent;
+        this.element = this.frame = frame;
+        this.container = this._parent = parent;
         this._render = render;
+        this._afterAdd = afterAdd;
         this.indexes = {
             top: 0,
             bottom: 0
         };
 
-        let last = this.last = document.createElement('div');
+        /*let last = this.last = document.createElement('div');
         last.style.width = '100%';
         last.style.hight = '0px';
         last.style.margin = '';
         last.style.padding = '';
+        last.style.border = '1px solid red';
+        last.style.position = 'relative';
+        parent.appendChild(last);*/
         frame.style.overflow = 'scroll';
 
         /*let {
@@ -41,39 +51,61 @@ class Virtualize {
             self.expand();
         }
 
-        parent.addEventListener('scroll', onScroll);
+        frame.addEventListener('scroll', onScroll);
 
         this.destroy = function(){
-            parent.removeEventListener('scroll', onScroll);
+            frame.removeEventListener('scroll', onScroll);
         };
     }
     expand(){
-        let rect = this.last.getBoundingClientRect();
-        let outer = this.element.getBoundingClientRect();
+        let last = this._parent.lastChild;
+        let rect = last ? last.getBoundingClientRect() : null;
+        let outer = this.frame.getBoundingClientRect();
         let parent = this._parent;
         let bottom = this.indexes.bottom;
-        if(rect.top >= outer.bottom){
-            for(let i=this.indexes.bottom; i<this.data.length; i++){
-                rect = this.last.getBoundingClientRect();
-                if(rect.top >= outer.bottom){
-                    console.log('this.data[i] ',this.data[i])
-                    let el = toElement(this._render(this.data[i]));
-                    parent.appendChild(el);
-                    parent.appendChild(this.last);
-                    bottom = i;
+        console.log('outer ',outer);
+        console.log('this.element.style.height ',this.element.style.height)
+        console.log(!rect || rect.bottom >= outer.bottom)
+        if(!rect || rect.top <= outer.bottom){
+            let start = parent.children.length;
+            for(let i=start; i<this.data.length; i++){
+                if(last){
+                    rect = last.getBoundingClientRect();
+                    console.log('rect ', rect)
+                    if(rect.bottom >= outer.bottom && rect.right > outer.right - rect.width){
+                        break;
+                    }
                 }
 
+                //console.log('this.data[i] ',this.data[i])
+                let el = toElement(this._render(this.data[i]));
+                parent.appendChild(el);
+                last = el;
+                bottom = i;
+
+
             }
+            console.log('outer ',outer)
             this.indexes.bottom = bottom;
 
+        }else if(rect.top > outer.bottom + 10){
+            for(let i=0; i<parent.children.length; i++){
+                let child = parent.children[i];
+                rect = child.getBoundingClientRect();
+                if(rect.top > outer.bottom + 10){
+                    parent.removeChild(child);
+                }
+            }
         }
     }
     push(...data){
         this.data = this.data.concat(data);
+        this._afterAdd();
+
+        //this._parent.style.height = (this.childHeight * this.data.length) + 'px';
         this.expand();
     }
     appendTo(dest){
-        console.log('dest ',dest)
         try{
 
             dest.appendChild(this.element);
