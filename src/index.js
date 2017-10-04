@@ -59,6 +59,7 @@ class Virtualize {
                     console.log('this.data[i] ',this.data[i])
                     let el = toElement(this._render(this.data[i]));
                     parent.appendChild(el);
+                    parent.appendChild(this.last);
                     bottom = i;
                 }
 
