@@ -36,5 +36,12 @@
   },
   "homepage": "https://github.com/hollowdoor/dom_virtualize#readme",
   "jsnext:main": "dist/bundle.es.js",
-  "module": "dist/bundle.es.js"
+  "module": "dist/bundle.es.js",
+  "dependencies": {
+    "dom-elementals": "^1.0.1"
+  },
+  "devDependencies": {
+    "array-range": "^1.0.1",
+    "get-range": "^1.0.0"
+  }
 }
