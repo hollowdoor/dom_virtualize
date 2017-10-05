@@ -676,6 +676,8 @@ var Virtualize = function Virtualize(ref){
     frame.appendChild(parent);
     //parent.style.height = childHeight + 'px';
 
+    this.startIndex = 0;
+
     this.childHeight = childHeight;
     this.data = [];
     this.element = this.frame = frame;
@@ -718,14 +720,15 @@ var Virtualize = function Virtualize(ref){
 Virtualize.prototype.expand = function expand (){
         var this$1 = this;
 
+    var first = this._parent.firstChild;
     var last = this._parent.lastChild;
     var rect = last ? last.getBoundingClientRect() : null;
     var outer = this.frame.getBoundingClientRect();
     var parent = this._parent;
     var bottom = this.indexes.bottom;
-    console.log('outer ',outer);
-    console.log('this.element.style.height ',this.element.style.height);
-    console.log(!rect || rect.bottom >= outer.bottom);
+    //console.log('outer ',outer);
+    //console.log('this.element.style.height ',this.element.style.height)
+    //console.log(!rect || rect.bottom >= outer.bottom)
     if(!rect || rect.top <= outer.bottom){
         var start = parent.children.length;
         for(var i=start; i<this.data.length; i++){
@@ -745,7 +748,7 @@ Virtualize.prototype.expand = function expand (){
 
 
         }
-        console.log('outer ',outer);
+        //console.log('outer ',outer)
         this.indexes.bottom = bottom;
 
     }else if(rect.top > outer.bottom + 10){
@@ -757,6 +760,42 @@ Virtualize.prototype.expand = function expand (){
             }
         }
     }
+
+    rect = parent.children[this.startIndex] ? parent.children[this.startIndex].getBoundingClientRect() : null;
+
+    if(rect){
+        console.log('top ',rect.bottom < outer.top - 10);
+        if(rect.bottom < outer.top - 10){
+            for(var i$2=0; i$2<parent.children.length; ++i$2){
+                var child$1 = parent.children[i$2];
+                rect = child$1.getBoundingClientRect();
+                if(rect.bottom < outer.top + 10){
+                    var placeholder = child$1.cloneNode();
+                    placeholder.innerHTML = '';
+                    parent.replaceChild(placeholder, child$1);
+                    this$1.startIndex = i$2;
+                }
+            }
+        }else if(rect.bottom >= outer.top){
+            var start$1 = this.startIndex;
+            console.log('start ',start$1);
+            for(var i$3=start$1; i$3>-1; --i$3){
+                var current = parent.children[i$3];
+                if(current){
+                    rect = current.getBoundingClientRect();
+                    console.log('rect ', rect);
+                    if(rect.bottom <= outer.top){
+                        this$1.startIndex = i$3;
+                        break;
+                    }
+                }
+                var el$1 = toElement(this$1._render(this$1.data[i$3]));
+                parent.replaceChild(el$1, current);
+            }
+        }
+    }
+
+
 };
 Virtualize.prototype.push = function push (){
         var data = [], len = arguments.length;
